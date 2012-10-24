@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <title>HTML5 Minecraft</title>
+      <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+      
+      <style>
+         * {
+            margin: 0;
+            padding: 0;
+         }
+         
+         body {
+            width: 100%;
+            height: 100%;
+            background: #ddd;
+            font-weight: 12px;
+         }
+         
+         #stage {
+            background: #fff;
+            box-shadow: 0 8px 42px #aaa;
+            margin: 108px auto;
+            width: 800px;
+            height: 400px;
+         }
+         
+         .info_box {
+            margin: 23px auto;
+            text-align: center;
+            font-size: 80%;
+         }
+         
+         .info_box h1 {
+            margin: 20px;
+         }
+         
+         .info_box p {
+            margin: 5px;
+         }
+      </style>
+   </head>
+   <body>
+      <div id="stage"></div>
+      <div class="info_box">
+         <h1>HTML5 Minecraft</h1>
+         <p><a href="https://code.google.com/p/html5-minecraft/">Google Code Project</a> | <a href="http://www.rodrigo-silveira.com">My Personal Portfolio</a></p>
+         <p>&copy; 2012 Rodrigo Silveira. All rights reserved.</p>
+      </div>
+
+<script src="js/lib/jquery1.8.2.js"></script>
+<script src="js/lib/glmatrix.js"></script>
+<script>
+// ------------------------------------------------------------
+// 
+// ------------------------------------------------------------
+function createCanvas(width, height) {
+   var canvas = document.createElement("canvas");
+   canvas.width = width;
+   canvas.height = height;
+   
+   return canvas;
+}
+
+
+// ------------------------------------------------------------
+// 
+// ------------------------------------------------------------
+function createContext(canvas, type) {
+   if (!(canvas instanceof HTMLElement) && canvas.tagName != "CANVAS")
+      return false;
+
+   return canvas.getContext(type);
+}
+
+
+// ------------------------------------------------------------
+// 
+// ------------------------------------------------------------
+function setCanvas(canvas, domElement) {
+   return domElement.appendChild(canvas);
+}
+
+
+// ------------------------------------------------------------
+// 
+// ------------------------------------------------------------
+function getShader(gl, type, source) {
+   var shader = {src: false, exe: false};
+
+   $.ajax({
+      async: false,
+      url: source,
+      complete: function(res){
+         shader.src = res.responseText;
+      }
+   });
+
+   shader.exe = gl.createShader(gl[type]);
+   gl.shaderSource(shader.exe, shader.src);
+   gl.compileShader(shader.exe);
+   
+   if (!gl.getShaderParameter(shader.exe, gl.COMPILE_STATUS)) {
+      alert("-------------\n" +
+            " Fatal error \n" +
+            "-------------\n\n" +
+            "Your shader did not compile.\n\n" +
+            "(" + type + ")");
+
+      console.log(gl.getShaderInfoLog(shader.exe));
+      return null;
+   }
+
+   return shader.exe;
+}
+
+// ------------------------------------------------------------
+// 
+// ------------------------------------------------------------
+function setProgram(gl, fragShader, vertShader) {
+   gl.program = gl.createProgram();
+
+   console.log("Attaching shaders");
+   console.log({gl: gl, program: gl.program, frag: fragShader, vert: vertShader});
+
+   gl.attachShader(gl.program, fragShader);
+   gl.attachShader(gl.program, vertShader);
+   
+   gl.linkProgram(gl.program);
+   
+   if (!gl.getProgramParameter(gl.program, gl.LINK_STATUS)) {
+      alert("-------------\n" +
+            " Fatal error \n" +
+            "-------------\n\n" +
+            "Your shader program did not link");
+
+      console.log(gl.getProgramInfoLog(gl.program));
+   }
+
+   gl.useProgram(gl.program);
+}
+
+
+// ------------------------------------------------------------
+// 
+// ------------------------------------------------------------
+function setShaderValues(gl) {
+   gl.program.vertexPositionAttribute = gl.getAttribLocation(gl.program, "aVertPos");
+   gl.enableVertexAttribArray(gl.program.vertexPositionAttribute);
+   
+   gl.program.matUniformProjection = gl.getUniformLocation(gl.program, "umProjection");
+   gl.program.matUniformModelView = gl.getUniformLocation(gl.program, "umModelView");
+}
+
+
+// ------------------------------------------------------------
+// Main
+// ------------------------------------------------------------
+(function main() {
+   var canvas = createCanvas(800, 400);
+   setCanvas(canvas, document.querySelector("#stage"));
+
+   try {
+      var gl = createContext(canvas, "experimental-webgl");
+      gl.viewportWidth = canvas.width;
+      gl.viewportHeight = canvas.height;
+   } catch (e) {
+      alert("-------------\n" +
+            " Fatal error \n" +
+            "-------------\n\n" +
+            "Your no-good browser doesn't know WebGL. Shame...\n\n" +
+            "Aborting application.");
+      console.log(e.message);
+      console.log(e.stack);
+
+      return false;
+   }
+
+   console.log("Created canvas and context");
+   console.log({canvas: canvas, gl: gl});
+
+
+   var vertShader = getShader(gl, "VERTEX_SHADER", "./shaders/simple-vert.glsl");
+   var fragShader = getShader(gl, "FRAGMENT_SHADER", "./shaders/simple-frag.glsl");
+
+   console.log("Loading shaders");
+   console.log({vert: vertShader, frag: fragShader});
+
+   setProgram(gl, fragShader, vertShader);
+   
+   // TODO: find a more elegant way to do this
+   setShaderValues(gl);
+   
+   console.log("Linked values to shader program");
+
+   // TODO: initBuffers(gl)
+   
+   // TODO: renderScene()
+})();
+</script>
+   </body>
+</html>
