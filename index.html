@@ -20,7 +20,7 @@
          #stage {
             background: #fff;
             box-shadow: 0 8px 42px #aaa;
-            margin: 108px auto;
+            margin: 42px auto 108px;
             width: 800px;
             height: 400px;
          }
@@ -54,6 +54,53 @@
 // ------------------------------------------------------------
 // 
 // ------------------------------------------------------------
+var Shape = Shape || {};
+Shape.Rect = function(center, width, height) {
+   var center = center;
+   var width = width;
+   var height = height;
+
+   var mVerts = [];
+   var mBuffer;
+   var mItemSize;
+
+   (function construct(){
+      console.log("Constructing a Rect " + width + "x" + height);
+
+      var halfWidth = width / 2;
+      var halfHeight = height / 2;
+      mItemSize = 3;
+
+      mVerts[0] = center + halfWidth;
+      mVerts[1] = center + halfHeight;
+      mVerts[2] = 0.0;
+
+      mVerts[3] = center - halfWidth;
+      mVerts[4] = center + halfHeight;
+      mVerts[5] = 0.0;
+
+      mVerts[6] = center + halfWidth;
+      mVerts[7] = center - halfHeight;
+      mVerts[8] = 0.0;
+
+      mVerts[9] = center - halfWidth;
+      mVerts[10] = center - halfHeight;
+      mVerts[11] = 0.0;
+   })();
+
+   return {
+      getVerts: function(){ return mVerts; },
+      setBuffer: function(buffer){ mBuffer = buffer; },
+      getBufferPosition: function(){ return mBuffer; },
+      getItemSize: function(){ return mItemSize; },
+      getNumItems: function(){ return parseInt(mVerts.length / mItemSize); }
+   };
+}
+
+
+// ------------------------------------------------------------
+// 
+// ------------------------------------------------------------
 function createCanvas(width, height) {
    var canvas = document.createElement("canvas");
    canvas.width = width;
@@ -70,7 +117,11 @@ function createContext(canvas, type) {
    if (!(canvas instanceof HTMLElement) && canvas.tagName != "CANVAS")
       return false;
 
-   return canvas.getContext(type);
+   var gl = canvas.getContext(type) || canvas.getContext("experimental-" + type);
+   gl.viewportWidth = canvas.width;
+   gl.viewportHeight = canvas.height;
+
+   return gl;
 }
 
 
@@ -145,13 +196,47 @@ function setProgram(gl, fragShader, vertShader) {
 // 
 // ------------------------------------------------------------
 function setShaderValues(gl) {
+   // Attribute: aVertPos
    gl.program.vertexPositionAttribute = gl.getAttribLocation(gl.program, "aVertPos");
    gl.enableVertexAttribArray(gl.program.vertexPositionAttribute);
-   
+
+   // Uniform: umProjection
    gl.program.matUniformProjection = gl.getUniformLocation(gl.program, "umProjection");
+
+   // Uniform: umModelView
    gl.program.matUniformModelView = gl.getUniformLocation(gl.program, "umModelView");
 }
 
+// ------------------------------------------------------------
+// 
+// ------------------------------------------------------------
+function initBuffers(gl, shape) {
+   shape.setBuffer(gl.createBuffer());
+   gl.bindBuffer(gl.ARRAY_BUFFER, shape.getBufferPosition());
+   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(shape.getVerts()), gl.STATIC_DRAW);
+}
+
+// ------------------------------------------------------------
+// 
+// ------------------------------------------------------------
+function renderScene(gl, shape, matProjection, matModelView) {
+   console.log("Rendering scene");
+
+   gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
+   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+
+   mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, matProjection);
+   mat4.identity(matModelView);
+   mat4.translate(matModelView, [0.0, 0.0, -7.0]);
+
+   gl.bindBuffer(gl.ARRAY_BUFFER, shape.getBufferPosition());
+   gl.vertexAttribPointer(gl.program.vertexPositionAttribute, shape.getItemSize(), gl.FLOAT, false, 0, 0);
+
+   gl.uniformMatrix4fv(gl.program.matUniformProjection, false, matProjection);
+   gl.uniformMatrix4fv(gl.program.matUniformModelView, false, matModelView);
+
+   gl.drawArrays(gl.TRIANGLE_STRIP, 0, shape.getNumItems());
+}
 
 // ------------------------------------------------------------
 // Main
@@ -161,7 +246,7 @@ function setShaderValues(gl) {
    setCanvas(canvas, document.querySelector("#stage"));
 
    try {
-      var gl = createContext(canvas, "experimental-webgl");
+      var gl = createContext(canvas, "webgl");
       gl.viewportWidth = canvas.width;
       gl.viewportHeight = canvas.height;
    } catch (e) {
@@ -193,9 +278,20 @@ function setShaderValues(gl) {
    
    console.log("Linked values to shader program");
 
-   // TODO: initBuffers(gl)
+   var square = new Shape.Rect(0.0, 2.0, 2.0);
+   initBuffers(gl, square);
+
+   console.log("Shape to render: Square" + square.getVerts());
    
-   // TODO: renderScene()
+
+   gl.clearColor(0.0, 0.0, 0.0, 1.0);
+   gl.enable(gl.DEPTH_TEST);
+
+   var matProjection = mat4.create();
+   var matModelView = mat4.create();
+
+   renderScene(gl, square, matProjection, matModelView);
+   console.log("Shape rendered");
 })();
 </script>
    </body>
