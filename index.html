@@ -55,45 +55,55 @@
 // 
 // ------------------------------------------------------------
 var Shape = Shape || {};
-Shape.Rect = function(center, width, height) {
-   var center = center;
-   var width = width;
-   var height = height;
+Shape.Rect = function(x, y, z, width, height) {
 
+   var mCoor = {
+      x: x,
+      y: y,
+      z: z,
+      w: width,
+      h: height
+   };
    var mVerts = [];
-   var mBuffer;
+   var mColors = [];
+   var mBuffers = {};
    var mItemSize;
 
    (function construct(){
-      console.log("Constructing a Rect " + width + "x" + height);
-
-      var halfWidth = width / 2;
-      var halfHeight = height / 2;
       mItemSize = 3;
 
-      mVerts[0] = center + halfWidth;
-      mVerts[1] = center + halfHeight;
-      mVerts[2] = 0.0;
+      mVerts[0] = mCoor.x + mCoor.w;
+      mVerts[1] = mCoor.y + mCoor.h;
+      mVerts[2] = mCoor.z;
 
-      mVerts[3] = center - halfWidth;
-      mVerts[4] = center + halfHeight;
-      mVerts[5] = 0.0;
+      mVerts[3] = mCoor.x;
+      mVerts[4] = mCoor.y + mCoor.h;
+      mVerts[5] = mCoor.z;
 
-      mVerts[6] = center + halfWidth;
-      mVerts[7] = center - halfHeight;
-      mVerts[8] = 0.0;
+      mVerts[6] = mCoor.x + mCoor.w;
+      mVerts[7] = mCoor.y;
+      mVerts[8] = mCoor.z;
 
-      mVerts[9] = center - halfWidth;
-      mVerts[10] = center - halfHeight;
-      mVerts[11] = 0.0;
+      mVerts[9] = mCoor.x;
+      mVerts[10] = mCoor.y;
+      mVerts[11] = mCoor.z;
+      
+      mColors = [
+         1.0, 0.0, 0.0, 1.0,
+         1.0, 0.5, 0.5, 1.0,
+         1.0, 0.0, 0.0, 1.0,
+         0.5, 0.0, 0.0, 1.0
+      ];
    })();
 
    return {
       getVerts: function(){ return mVerts; },
-      setBuffer: function(buffer){ mBuffer = buffer; },
-      getBufferPosition: function(){ return mBuffer; },
+      getColors: function(){ return mColors; },
+      setBuffer: function(type, buffer){ mBuffers[type] = buffer; },
+      getBufferPosition: function(type){ return mBuffers[type]; },
       getItemSize: function(){ return mItemSize; },
-      getNumItems: function(){ return parseInt(mVerts.length / mItemSize); }
+      getNumItems: function(){ return parseInt(mVerts.length / mItemSize); },
+      getCoor: function(){ return mCoord; }
    };
 }
 
@@ -199,6 +209,10 @@ function setShaderValues(gl) {
    // Attribute: aVertPos
    gl.program.vertexPositionAttribute = gl.getAttribLocation(gl.program, "aVertPos");
    gl.enableVertexAttribArray(gl.program.vertexPositionAttribute);
+   
+   // Attribute: aVertColor
+   gl.program.vertexColorAttribute = gl.getAttribLocation(gl.program, "aVertColor");
+   gl.enableVertexAttribArray(gl.program.vertexColorAttribute);
 
    // Uniform: umProjection
    gl.program.matUniformProjection = gl.getUniformLocation(gl.program, "umProjection");
@@ -211,9 +225,13 @@ function setShaderValues(gl) {
 // 
 // ------------------------------------------------------------
 function initBuffers(gl, shape) {
-   shape.setBuffer(gl.createBuffer());
-   gl.bindBuffer(gl.ARRAY_BUFFER, shape.getBufferPosition());
+   shape.setBuffer("vertex", gl.createBuffer());
+   gl.bindBuffer(gl.ARRAY_BUFFER, shape.getBufferPosition("vertex"));
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(shape.getVerts()), gl.STATIC_DRAW);
+   
+   shape.setBuffer("color", gl.createBuffer());
+   gl.bindBuffer(gl.ARRAY_BUFFER, shape.getBufferPosition("color"));
+   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(shape.getColors()), gl.STATIC_DRAW);
 }
 
 // ------------------------------------------------------------
@@ -227,10 +245,12 @@ function renderScene(gl, shape, matProjection, matModelView) {
 
    mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, matProjection);
    mat4.identity(matModelView);
-   mat4.translate(matModelView, [0.0, 0.0, -7.0]);
 
-   gl.bindBuffer(gl.ARRAY_BUFFER, shape.getBufferPosition());
+   gl.bindBuffer(gl.ARRAY_BUFFER, shape.getBufferPosition("vertex"));
    gl.vertexAttribPointer(gl.program.vertexPositionAttribute, shape.getItemSize(), gl.FLOAT, false, 0, 0);
+   
+   gl.bindBuffer(gl.ARRAY_BUFFER, shape.getBufferPosition("color"));
+   gl.vertexAttribPointer(gl.program.vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
 
    gl.uniformMatrix4fv(gl.program.matUniformProjection, false, matProjection);
    gl.uniformMatrix4fv(gl.program.matUniformModelView, false, matModelView);
@@ -278,7 +298,7 @@ function renderScene(gl, shape, matProjection, matModelView) {
    
    console.log("Linked values to shader program");
 
-   var square = new Shape.Rect(0.0, 2.0, 2.0);
+   var square = new Shape.Rect(-1.0, -1.0, -10.0, 2.0, 2.0);
    initBuffers(gl, square);
 
    console.log("Shape to render: Square" + square.getVerts());
