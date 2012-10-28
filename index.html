@@ -55,44 +55,97 @@
 // 
 // ------------------------------------------------------------
 var Shape = Shape || {};
-Shape.Rect = function(x, y, z, width, height) {
+Shape.Cube = function(x, y, width, height) {
 
    var mCoor = {
       x: x,
       y: y,
-      z: z,
+      z: 0,
       w: width,
       h: height
    };
    var mVerts = [];
    var mColors = [];
+   var mIndexArray = [];
    var mBuffers = {};
    var mItemSize;
 
    (function construct(){
       mItemSize = 3;
 
-      mVerts[0] = mCoor.x + mCoor.w;
-      mVerts[1] = mCoor.y + mCoor.h;
-      mVerts[2] = mCoor.z;
+      mVerts = [
+         // Front face
+      -1.0, -1.0,  1.0,
+       1.0, -1.0,  1.0,
+       1.0,  1.0,  1.0,
+      -1.0,  1.0,  1.0,
 
-      mVerts[3] = mCoor.x;
-      mVerts[4] = mCoor.y + mCoor.h;
-      mVerts[5] = mCoor.z;
+      // Back face
+      -1.0, -1.0, -1.0,
+      -1.0,  1.0, -1.0,
+       1.0,  1.0, -1.0,
+       1.0, -1.0, -1.0,
 
-      mVerts[6] = mCoor.x + mCoor.w;
-      mVerts[7] = mCoor.y;
-      mVerts[8] = mCoor.z;
+      // Top face
+      -1.0,  1.0, -1.0,
+      -1.0,  1.0,  1.0,
+       1.0,  1.0,  1.0,
+       1.0,  1.0, -1.0,
 
-      mVerts[9] = mCoor.x;
-      mVerts[10] = mCoor.y;
-      mVerts[11] = mCoor.z;
-      
+      // Bottom face
+      -1.0, -1.0, -1.0,
+       1.0, -1.0, -1.0,
+       1.0, -1.0,  1.0,
+      -1.0, -1.0,  1.0,
+
+      // Right face
+       1.0, -1.0, -1.0,
+       1.0,  1.0, -1.0,
+       1.0,  1.0,  1.0,
+       1.0, -1.0,  1.0,
+
+      // Left face
+      -1.0, -1.0, -1.0,
+      -1.0, -1.0,  1.0,
+      -1.0,  1.0,  1.0,
+      -1.0,  1.0, -1.0,
+      ];
+
       mColors = [
          1.0, 0.0, 0.0, 1.0,
-         1.0, 0.5, 0.5, 1.0,
          1.0, 0.0, 0.0, 1.0,
-         0.5, 0.0, 0.0, 1.0
+         1.0, 0.0, 0.0, 1.0,
+         1.0, 0.0, 0.0, 1.0,
+         0.0, 1.0, 0.0, 1.0,
+         0.0, 1.0, 0.0, 1.0,
+         0.0, 1.0, 0.0, 1.0,
+         0.0, 1.0, 0.0, 1.0,
+         0.0, 0.0, 1.0, 1.0,
+         0.0, 0.0, 1.0, 1.0,
+         0.0, 0.0, 1.0, 1.0,
+         0.0, 0.0, 1.0, 1.0,
+         
+         1.0, 1.0, 0.0, 1.0,
+         1.0, 1.0, 0.0, 1.0,
+         1.0, 1.0, 0.0, 1.0,
+         1.0, 1.0, 0.0, 1.0,
+         0.0, 1.0, 1.0, 1.0,
+         0.0, 1.0, 1.0, 1.0,
+         0.0, 1.0, 1.0, 1.0,
+         0.0, 1.0, 1.0, 1.0,
+         1.0, 0.0, 1.0, 1.0,
+         1.0, 0.0, 1.0, 1.0,
+         1.0, 0.0, 1.0, 1.0,
+         1.0, 0.0, 1.0, 1.0
+      ];
+      
+      mIndexArray = [
+         0, 1, 2,      0, 2, 3,    // Front face
+         4, 5, 6,      4, 6, 7,    // Back face
+         8, 9, 10,     8, 10, 11,  // Top face
+         12, 13, 14,   12, 14, 15, // Bottom face
+         16, 17, 18,   16, 18, 19, // Right face
+         20, 21, 22,   20, 22, 23  // Left face
       ];
    })();
 
@@ -103,7 +156,9 @@ Shape.Rect = function(x, y, z, width, height) {
       getBufferPosition: function(type){ return mBuffers[type]; },
       getItemSize: function(){ return mItemSize; },
       getNumItems: function(){ return parseInt(mVerts.length / mItemSize); },
-      getCoor: function(){ return mCoord; }
+      getCoor: function(){ return mCoord; },
+      getIndexArray: function(){ return mIndexArray; },
+      getTotalVertBuffer: function(){ return mIndexArray.length; }
    };
 }
 
@@ -232,8 +287,13 @@ function initBuffers(gl, shape) {
    shape.setBuffer("color", gl.createBuffer());
    gl.bindBuffer(gl.ARRAY_BUFFER, shape.getBufferPosition("color"));
    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(shape.getColors()), gl.STATIC_DRAW);
+   
+   shape.setBuffer("indexArray", gl.createBuffer());
+   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, shape.getBufferPosition("indexArray"));
+   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(shape.getIndexArray()), gl.STATIC_DRAW);
 }
 
+var ROT = 1;
 // ------------------------------------------------------------
 // 
 // ------------------------------------------------------------
@@ -245,17 +305,27 @@ function renderScene(gl, shape, matProjection, matModelView) {
 
    mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, matProjection);
    mat4.identity(matModelView);
+   mat4.translate(matModelView, [0, 0, -10]);
+   mat4.rotate(matModelView, ROT, [0, 0, 1]);
+   mat4.rotate(matModelView, ROT * 2, [0, 1, 0]);
+   mat4.rotate(matModelView, ROT / 4, [1, 0, 0]);
 
    gl.bindBuffer(gl.ARRAY_BUFFER, shape.getBufferPosition("vertex"));
    gl.vertexAttribPointer(gl.program.vertexPositionAttribute, shape.getItemSize(), gl.FLOAT, false, 0, 0);
-   
+
    gl.bindBuffer(gl.ARRAY_BUFFER, shape.getBufferPosition("color"));
    gl.vertexAttribPointer(gl.program.vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
 
+   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, shape.getBufferPosition("indexArray"));
+
    gl.uniformMatrix4fv(gl.program.matUniformProjection, false, matProjection);
    gl.uniformMatrix4fv(gl.program.matUniformModelView, false, matModelView);
-
-   gl.drawArrays(gl.TRIANGLE_STRIP, 0, shape.getNumItems());
+   gl.drawElements(gl.TRIANGLES, shape.getTotalVertBuffer(), gl.UNSIGNED_SHORT, 0);
+   
+   ROT += 0.01;
+   window.window.webkitRequestAnimationFrame(function(){
+      renderScene(gl, shape, matProjection, matModelView);
+   });
 }
 
 // ------------------------------------------------------------
@@ -298,7 +368,7 @@ function renderScene(gl, shape, matProjection, matModelView) {
    
    console.log("Linked values to shader program");
 
-   var square = new Shape.Rect(-1.0, -1.0, -10.0, 2.0, 2.0);
+   var square = new Shape.Cube(-1.0, -1.0, 2.0, 2.0);
    initBuffers(gl, square);
 
    console.log("Shape to render: Square" + square.getVerts());
