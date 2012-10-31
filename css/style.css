@@ -1,0 +1,33 @@
+* {
+   margin: 0;
+   padding: 0;
+}
+
+body {
+   width: 100%;
+   height: 100%;
+   background: #ddd;
+   font-weight: 12px;
+}
+
+#stage {
+   background: #fff;
+   box-shadow: 0 8px 42px #aaa;
+   margin: 42px auto 108px;
+   width: 800px;
+   height: 400px;
+}
+
+.info_box {
+   margin: 23px auto;
+   text-align: center;
+   font-size: 80%;
+}
+
+.info_box h1 {
+   margin: 20px;
+}
+
+.info_box p {
+   margin: 5px;
+}
