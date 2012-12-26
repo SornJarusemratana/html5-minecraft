@@ -1,6 +1,6 @@
 package com.formigone.webgl.client;
 
-import com.formigone.webgl.resources.Res;
+import com.formigone.webgl.resources.R;
 import com.google.gwt.core.client.EntryPoint;
 import com.google.gwt.resources.client.ExternalTextResource;
 import com.google.gwt.resources.client.ResourceCallback;
@@ -17,12 +17,12 @@ public class Index implements EntryPoint {
 	@Override
 	public void onModuleLoad() {
 		
-		Image img = new Image(Res.R.tree());
+		Image img = new Image(R.INSTANCE.tree());
 		final Label frag = new Label();
 		final Label vert = new Label();
-		
-		showShaderText(Res.R.simpleFragShader(), frag);
-		showShaderText(Res.R.simpleVertShader(), vert);
+
+		showShaderText(R.INSTANCE.simpleFragShader(), frag);
+		showShaderText(R.INSTANCE.simpleVertShader(), vert);
 		
 		DOM.setElementAttribute(frag.getElement(), "style", "white-space: pre");
 		DOM.setElementAttribute(vert.getElement(), "style", "white-space: pre");
@@ -32,20 +32,20 @@ public class Index implements EntryPoint {
 		shaders.add(vert, "Vertex");
 		shaders.selectTab(0);
 
-		RootPanel.get().add(img);
 		RootPanel.get().add(shaders);
+		RootPanel.get().add(img);
 	}
 	
 	private void showShaderText(ExternalTextResource res, final Label el) {
 
 		try {
 			res.getText(new ResourceCallback<TextResource>() {
-				
+
 				@Override
 				public void onSuccess(TextResource r) {
 					el.setText(r.getText());
 				}
-				
+
 				@Override
 				public void onError(ResourceException e) {
 					el.setText("Error getting resource");
