@@ -24,8 +24,8 @@ public class Index implements EntryPoint {
 		showShaderText(Res.R.simpleFragShader(), frag);
 		showShaderText(Res.R.simpleVertShader(), vert);
 		
-		DOM.setElementAttribute(frag.getElement(), "white-space", "pre");
-		DOM.setElementAttribute(vert.getElement(), "white-space", "pre");
+		DOM.setElementAttribute(frag.getElement(), "style", "white-space: pre");
+		DOM.setElementAttribute(vert.getElement(), "style", "white-space: pre");
 		
 		TabPanel shaders = new TabPanel();
 		shaders.add(frag, "Fragment");
