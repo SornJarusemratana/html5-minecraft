@@ -40,125 +40,61 @@
          }
       </style>
    </head>
-   <body>
+   <body  onload ="webGLStart();">
       <div id="stage"></div>
       <div class="info_box">
          <h1>HTML5 Minecraft</h1>
          <p><a href="https://code.google.com/p/html5-minecraft/">Google Code Project</a> | <a href="http://www.rodrigo-silveira.com">My Personal Portfolio</a></p>
          <p>&copy; 2012 Rodrigo Silveira. All rights reserved.</p>
+         <h>
+         <p>Modified by Sorn Jarukasemratana, you can walk around by using W S A D or arrow keys</p>
       </div>
 
 <script src="js/lib/jquery1.8.2.js"></script>
 <script src="js/lib/glmatrix.js"></script>
-<script>
+<script type="text/javascript" src="webgl-utils.js"></script>
+<script type="text/javascript">
 // ------------------------------------------------------------
 // 
 // ------------------------------------------------------------
-var Shape = Shape || {};
-Shape.Cube = function(x, y, width, height) {
 
-   var mCoor = {
-      x: x,
-      y: y,
-      z: 0,
-      w: width,
-      h: height
-   };
+var Shape = Shape || {};
+Shape.Rect = function(center, width, height) {
+   var center = center;
+   var width = width;
+   var height = height;
+
    var mVerts = [];
-   var mColors = [];
-   var mIndexArray = [];
-   var mBuffers = {};
+   var mBuffer;
    var mItemSize;
 
    (function construct(){
+      console.log("Constructing a Rect " + width + "x" + height);
+
+      var halfWidth = width / 2;
+      var halfHeight = height / 2;
       mItemSize = 3;
 
-      mVerts = [
-         // Front face
-      -1.0, -1.0,  1.0,
-       1.0, -1.0,  1.0,
-       1.0,  1.0,  1.0,
-      -1.0,  1.0,  1.0,
+      mVerts[0] = center;
+      mVerts[1] = center + halfHeight;
+      mVerts[2] = 0.0;
 
-      // Back face
-      -1.0, -1.0, -1.0,
-      -1.0,  1.0, -1.0,
-       1.0,  1.0, -1.0,
-       1.0, -1.0, -1.0,
+      mVerts[3] = center - halfWidth;
+      mVerts[4] = center - halfHeight;
+      mVerts[5] = 0.0;
 
-      // Top face
-      -1.0,  1.0, -1.0,
-      -1.0,  1.0,  1.0,
-       1.0,  1.0,  1.0,
-       1.0,  1.0, -1.0,
+      mVerts[6] = center + halfWidth;
+      mVerts[7] = center - halfHeight;
+      mVerts[8] = 0.0;
 
-      // Bottom face
-      -1.0, -1.0, -1.0,
-       1.0, -1.0, -1.0,
-       1.0, -1.0,  1.0,
-      -1.0, -1.0,  1.0,
-
-      // Right face
-       1.0, -1.0, -1.0,
-       1.0,  1.0, -1.0,
-       1.0,  1.0,  1.0,
-       1.0, -1.0,  1.0,
-
-      // Left face
-      -1.0, -1.0, -1.0,
-      -1.0, -1.0,  1.0,
-      -1.0,  1.0,  1.0,
-      -1.0,  1.0, -1.0,
-      ];
-
-      mColors = [
-         1.0, 0.0, 0.0, 1.0,
-         1.0, 0.0, 0.0, 1.0,
-         1.0, 0.0, 0.0, 1.0,
-         1.0, 0.0, 0.0, 1.0,
-         0.0, 1.0, 0.0, 1.0,
-         0.0, 1.0, 0.0, 1.0,
-         0.0, 1.0, 0.0, 1.0,
-         0.0, 1.0, 0.0, 1.0,
-         0.0, 0.0, 1.0, 1.0,
-         0.0, 0.0, 1.0, 1.0,
-         0.0, 0.0, 1.0, 1.0,
-         0.0, 0.0, 1.0, 1.0,
-         
-         1.0, 1.0, 0.0, 1.0,
-         1.0, 1.0, 0.0, 1.0,
-         1.0, 1.0, 0.0, 1.0,
-         1.0, 1.0, 0.0, 1.0,
-         0.0, 1.0, 1.0, 1.0,
-         0.0, 1.0, 1.0, 1.0,
-         0.0, 1.0, 1.0, 1.0,
-         0.0, 1.0, 1.0, 1.0,
-         1.0, 0.0, 1.0, 1.0,
-         1.0, 0.0, 1.0, 1.0,
-         1.0, 0.0, 1.0, 1.0,
-         1.0, 0.0, 1.0, 1.0
-      ];
-      
-      mIndexArray = [
-         0, 1, 2,      0, 2, 3,    // Front face
-         4, 5, 6,      4, 6, 7,    // Back face
-         8, 9, 10,     8, 10, 11,  // Top face
-         12, 13, 14,   12, 14, 15, // Bottom face
-         16, 17, 18,   16, 18, 19, // Right face
-         20, 21, 22,   20, 22, 23  // Left face
-      ];
    })();
 
    return {
       getVerts: function(){ return mVerts; },
-      getColors: function(){ return mColors; },
-      setBuffer: function(type, buffer){ mBuffers[type] = buffer; },
-      getBufferPosition: function(type){ return mBuffers[type]; },
+      setBuffer: function(buffer){ mBuffer = buffer; },
+      getBufferPosition: function(){ return mBuffer; },
       getItemSize: function(){ return mItemSize; },
-      getNumItems: function(){ return parseInt(mVerts.length / mItemSize); },
-      getCoor: function(){ return mCoord; },
-      getIndexArray: function(){ return mIndexArray; },
-      getTotalVertBuffer: function(){ return mIndexArray.length; }
+      getNumItems: function(){ return parseInt(mVerts.length / mItemSize); }
    };
 }
 
@@ -256,87 +192,327 @@ function setProgram(gl, fragShader, vertShader) {
    gl.useProgram(gl.program);
 }
 
-
 // ------------------------------------------------------------
 // 
 // ------------------------------------------------------------
 function setShaderValues(gl) {
    // Attribute: aVertPos
-   gl.program.vertexPositionAttribute = gl.getAttribLocation(gl.program, "aVertPos");
+   gl.program.vertexPositionAttribute = gl.getAttribLocation(gl.program, "aVertexPosition");
    gl.enableVertexAttribArray(gl.program.vertexPositionAttribute);
-   
-   // Attribute: aVertColor
-   gl.program.vertexColorAttribute = gl.getAttribLocation(gl.program, "aVertColor");
-   gl.enableVertexAttribArray(gl.program.vertexColorAttribute);
 
+   gl.program.textureCoordAttribute = gl.getAttribLocation(gl.program, "aTextureCoord");
+   gl.enableVertexAttribArray(gl.program.textureCoordAttribute);
+   
    // Uniform: umProjection
-   gl.program.matUniformProjection = gl.getUniformLocation(gl.program, "umProjection");
+   gl.program.matUniformProjection = gl.getUniformLocation(gl.program, "uPMatrix");
 
    // Uniform: umModelView
-   gl.program.matUniformModelView = gl.getUniformLocation(gl.program, "umModelView");
+   gl.program.matUniformModelView = gl.getUniformLocation(gl.program, "uMVMatrix");
+   
+   gl.program.samplerUniform = gl.getUniformLocation(gl.program, "uSampler");
+  
+}
+
+function handleLoadedTexture(texture) {
+    gl.bindTexture(gl.TEXTURE_2D, texture);
+    gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, true);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, texture.image);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+    gl.bindTexture(gl.TEXTURE_2D, null);
+}
+
+var rockTexture;
+var skyboxTexture;
+
+function initTexture() {
+	rockTexture = gl.createTexture();
+	rockTexture.image = new Image();
+	rockTexture.image.onload = function () {
+        handleLoadedTexture(rockTexture)
+    }
+
+	rockTexture.image.src = "assets/rock-color.png";
+    
+    skyboxTexture = gl.createTexture();
+    skyboxTexture.image = new Image();
+    skyboxTexture.image.onload = function () {
+        handleLoadedTexture(skyboxTexture)
+    }
+
+    skyboxTexture.image.src = "assets/Rock01_DM.jpg";
+}
+
+var yaw = 0;
+var yawRate = 0;
+var speed = 0;
+
+var currentlyPressedKeys = {};
+
+function handleKeyDown(event) {
+    currentlyPressedKeys[event.keyCode] = true;
+}
+
+function handleKeyUp(event) {
+    currentlyPressedKeys[event.keyCode] = false;
+}
+
+function handleKeys() {
+	if (currentlyPressedKeys[37] || currentlyPressedKeys[65]) {
+        // Left cursor key or A
+        yawRate = 0.1;
+    } else if (currentlyPressedKeys[39] || currentlyPressedKeys[68]) {
+        // Right cursor key or D
+        yawRate = -0.1;
+    } else {
+        yawRate = 0;
+    }
+
+    if (currentlyPressedKeys[38] || currentlyPressedKeys[87]) {
+        // Up cursor key or W
+        speed = 0.003;
+    } else if (currentlyPressedKeys[40] || currentlyPressedKeys[83]) {
+        // Down cursor key or S
+        speed = -0.003;
+    } else {
+        speed = 0;
+    }
 }
 
 // ------------------------------------------------------------
 // 
 // ------------------------------------------------------------
+var triangleVertexColorBuffer;
+var cubeVertexPositionBuffer;
+var cubeVertexTextureCoordBuffer;
+var cubeVertexIndexBuffer;
+
 function initBuffers(gl, shape) {
-   shape.setBuffer("vertex", gl.createBuffer());
-   gl.bindBuffer(gl.ARRAY_BUFFER, shape.getBufferPosition("vertex"));
-   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(shape.getVerts()), gl.STATIC_DRAW);
+   //shape.setBuffer(gl.createBuffer());
+   //gl.bindBuffer(gl.ARRAY_BUFFER, shape.getBufferPosition());
+   //gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(shape.getVerts()), gl.STATIC_DRAW);
    
-   shape.setBuffer("color", gl.createBuffer());
-   gl.bindBuffer(gl.ARRAY_BUFFER, shape.getBufferPosition("color"));
-   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(shape.getColors()), gl.STATIC_DRAW);
-   
-   shape.setBuffer("indexArray", gl.createBuffer());
-   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, shape.getBufferPosition("indexArray"));
-   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(shape.getIndexArray()), gl.STATIC_DRAW);
+   cubeVertexPositionBuffer = gl.createBuffer();
+   gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexPositionBuffer);
+   vertices = [
+       // Front face
+       -1.0, -1.0, 1.0,
+        1.0, -1.0, 1.0,
+        1.0, 1.0, 1.0,
+       -1.0, 1.0, 1.0,
+
+       // Back face
+       -1.0, -1.0, -1.0,
+       -1.0, 1.0, -1.0,
+        1.0, 1.0, -1.0,
+        1.0, -1.0, -1.0,
+
+       // Top face
+       -1.0, 1.0, -1.0,
+       -1.0, 1.0, 1.0,
+        1.0, 1.0, 1.0,
+        1.0, 1.0, -1.0,
+
+       // Bottom face
+       -1.0, -1.0, -1.0,
+        1.0, -1.0, -1.0,
+        1.0, -1.0, 1.0,
+       -1.0, -1.0, 1.0,
+
+       // Right face
+        1.0, -1.0, -1.0,
+        1.0, 1.0, -1.0,
+        1.0, 1.0, 1.0,
+        1.0, -1.0, 1.0,
+
+       // Left face
+       -1.0, -1.0, -1.0,
+       -1.0, -1.0, 1.0,
+       -1.0, 1.0, 1.0,
+       -1.0, 1.0, -1.0,
+   ];
+   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertices), gl.STATIC_DRAW);
+   cubeVertexPositionBuffer.itemSize = 3;
+   cubeVertexPositionBuffer.numItems = 24;
+
+   cubeVertexTextureCoordBuffer = gl.createBuffer();
+   gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexTextureCoordBuffer);
+   var textureCoords = [
+     // Front face
+     0.0, 0.0,
+     1.0, 0.0,
+     1.0, 1.0,
+     0.0, 1.0,
+
+     // Back face
+     1.0, 0.0,
+     1.0, 1.0,
+     0.0, 1.0,
+     0.0, 0.0,
+
+     // Top face
+     0.0, 1.0,
+     0.0, 0.0,
+     1.0, 0.0,
+     1.0, 1.0,
+
+     // Bottom face
+     1.0, 1.0,
+     0.0, 1.0,
+     0.0, 0.0,
+     1.0, 0.0,
+
+     // Right face
+     1.0, 0.0,
+     1.0, 1.0,
+     0.0, 1.0,
+     0.0, 0.0,
+
+     // Left face
+     0.0, 0.0,
+     1.0, 0.0,
+     1.0, 1.0,
+     0.0, 1.0,
+   ];
+   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoords), gl.STATIC_DRAW);
+   cubeVertexTextureCoordBuffer.itemSize = 2;
+   cubeVertexTextureCoordBuffer.numItems = 24;
+
+   cubeVertexIndexBuffer = gl.createBuffer();
+   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVertexIndexBuffer);
+   var cubeVertexIndices = [
+       0, 1, 2, 0, 2, 3, // Front face
+       4, 5, 6, 4, 6, 7, // Back face
+       8, 9, 10, 8, 10, 11, // Top face
+       12, 13, 14, 12, 14, 15, // Bottom face
+       16, 17, 18, 16, 18, 19, // Right face
+       20, 21, 22, 20, 22, 23 // Left face
+   ];
+   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(cubeVertexIndices), gl.STATIC_DRAW);
+   cubeVertexIndexBuffer.itemSize = 1;
+   cubeVertexIndexBuffer.numItems = 36;
 }
 
-var ROT = 1;
+
 // ------------------------------------------------------------
 // 
 // ------------------------------------------------------------
-function renderScene(gl, shape, matProjection, matModelView) {
-   console.log("Rendering scene");
 
+var yPos = 0;
+var xPos = 0;
+var zPos = 0;
+function degToRad(degrees) {
+    return degrees * Math.PI / 180;
+}
+
+function renderScene(gl, shape, uPMatrix, uMVMatrix) {
+	
+   gl.clearColor(0.0, 0.5, 0.5, 1.0);
+   gl.enable(gl.DEPTH_TEST);
+	   
+   console.log("Rendering scene");
+   
    gl.viewport(0, 0, gl.viewportWidth, gl.viewportHeight);
    gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-   mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, matProjection);
-   mat4.identity(matModelView);
-   mat4.translate(matModelView, [0, 0, -10]);
-   mat4.rotate(matModelView, ROT, [0, 0, 1]);
-   mat4.rotate(matModelView, ROT * 2, [0, 1, 0]);
-   mat4.rotate(matModelView, ROT / 4, [1, 0, 0]);
-
-   gl.bindBuffer(gl.ARRAY_BUFFER, shape.getBufferPosition("vertex"));
-   gl.vertexAttribPointer(gl.program.vertexPositionAttribute, shape.getItemSize(), gl.FLOAT, false, 0, 0);
-
-   gl.bindBuffer(gl.ARRAY_BUFFER, shape.getBufferPosition("color"));
-   gl.vertexAttribPointer(gl.program.vertexColorAttribute, 4, gl.FLOAT, false, 0, 0);
-
-   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, shape.getBufferPosition("indexArray"));
-
-   gl.uniformMatrix4fv(gl.program.matUniformProjection, false, matProjection);
-   gl.uniformMatrix4fv(gl.program.matUniformModelView, false, matModelView);
-   gl.drawElements(gl.TRIANGLES, shape.getTotalVertBuffer(), gl.UNSIGNED_SHORT, 0);
+   mat4.perspective(45, gl.viewportWidth / gl.viewportHeight, 0.1, 100.0, uPMatrix);
+   mat4.identity(uMVMatrix);
    
-   ROT += 0.01;
-   window.window.webkitRequestAnimationFrame(function(){
-      renderScene(gl, shape, matProjection, matModelView);
-   });
+   //cube camera
+   mat4.rotate(uMVMatrix, degToRad(-yaw), [0, 1, 0]);
+   mat4.translate(uMVMatrix, [-xPos, -yPos, -zPos]);
+   mat4.translate(uMVMatrix, [0.0, 0.0, -7.0]);
+  
+   //gl.bindBuffer(gl.ARRAY_BUFFER, shape.getBufferPosition());
+   //gl.vertexAttribPointer(gl.program.vertexPositionAttribute, shape.getItemSize(), gl.FLOAT, false, 0, 0);
+   
+   //gl.bindBuffer(gl.ARRAY_BUFFER, triangleVertexColorBuffer);
+   //gl.vertexAttribPointer(gl.program.vertexColorAttribute, triangleVertexColorBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+   //gl.uniformMatrix4fv(gl.program.matUniformProjection, false, matProjection);
+   //gl.uniformMatrix4fv(gl.program.matUniformModelView, false, matModelView);
+
+   //gl.drawArrays(gl.TRIANGLE_STRIP, 0, shape.getNumItems());
+
+   //cube
+   gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexPositionBuffer);
+   gl.vertexAttribPointer(gl.program.vertexPositionAttribute, cubeVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+   gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexTextureCoordBuffer);
+   gl.vertexAttribPointer(gl.program.textureCoordAttribute, cubeVertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+   gl.activeTexture(gl.TEXTURE0);
+   gl.bindTexture(gl.TEXTURE_2D, rockTexture);
+   gl.uniform1i(gl.program.samplerUniform, 0);
+
+   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVertexIndexBuffer);
+   gl.uniformMatrix4fv(gl.program.matUniformProjection, false, uPMatrix);
+   gl.uniformMatrix4fv(gl.program.matUniformModelView, false, uMVMatrix);
+   gl.drawElements(gl.TRIANGLES, cubeVertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
+   
+   //skybox camera
+   mat4.translate(uMVMatrix, [0.0, 19.0, 0.0]);
+   mat4.scale(uMVMatrix,[20.0,20.0,20.0],uMVMatrix);
+   
+   //skybox
+   gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexPositionBuffer);
+   gl.vertexAttribPointer(gl.program.vertexPositionAttribute, cubeVertexPositionBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+   gl.bindBuffer(gl.ARRAY_BUFFER, cubeVertexTextureCoordBuffer);
+   gl.vertexAttribPointer(gl.program.textureCoordAttribute, cubeVertexTextureCoordBuffer.itemSize, gl.FLOAT, false, 0, 0);
+
+   gl.activeTexture(gl.TEXTURE0);
+   gl.bindTexture(gl.TEXTURE_2D, skyboxTexture);
+   gl.uniform1i(gl.program.samplerUniform, 0);
+
+   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, cubeVertexIndexBuffer);
+   gl.uniformMatrix4fv(gl.program.matUniformProjection, false, uPMatrix);
+   gl.uniformMatrix4fv(gl.program.matUniformModelView, false, uMVMatrix);
+   gl.drawElements(gl.TRIANGLES, cubeVertexIndexBuffer.numItems, gl.UNSIGNED_SHORT, 0);
 }
 
 // ------------------------------------------------------------
-// Main
+// Main loop
 // ------------------------------------------------------------
-(function main() {
+var lastTime = 0;
+
+var gl;
+var uPMatrix = mat4.create();
+var uMVMatrix = mat4.create();
+var square = new Shape.Rect(0.0, 2.0, 2.0);
+
+function animate() {
+    var timeNow = new Date().getTime();
+    if (lastTime != 0) {
+        var elapsed = timeNow - lastTime;
+
+        if (speed != 0) {
+            xPos -= Math.sin(degToRad(yaw)) * speed * elapsed;
+            zPos -= Math.cos(degToRad(yaw)) * speed * elapsed;
+
+        }
+
+        yaw += yawRate * elapsed;
+    }
+    lastTime = timeNow;
+}
+    
+function tick() {
+	mozRequestAnimationFrame(tick); //**this is firefox specific command
+	//webkitRequestAnimationFrame(tick); //**chrome and safari
+	handleKeys();
+    renderScene(gl, square, uPMatrix, uMVMatrix);
+    animate();
+}
+
+function webGLStart() {
+//(function main() {
+	
    var canvas = createCanvas(800, 400);
    setCanvas(canvas, document.querySelector("#stage"));
 
    try {
-      var gl = createContext(canvas, "webgl");
+      gl = createContext(canvas, "webgl");
       gl.viewportWidth = canvas.width;
       gl.viewportHeight = canvas.height;
    } catch (e) {
@@ -368,21 +544,22 @@ function renderScene(gl, shape, matProjection, matModelView) {
    
    console.log("Linked values to shader program");
 
-   var square = new Shape.Cube(-1.0, -1.0, 2.0, 2.0);
    initBuffers(gl, square);
-
-   console.log("Shape to render: Square" + square.getVerts());
+   initTexture();  
    
-
-   gl.clearColor(0.0, 0.0, 0.0, 1.0);
-   gl.enable(gl.DEPTH_TEST);
-
-   var matProjection = mat4.create();
-   var matModelView = mat4.create();
-
-   renderScene(gl, square, matProjection, matModelView);
+   console.log("Shape to render: Square" + square.getVerts()); 
+   
+   document.onkeydown = handleKeyDown;
+   document.onkeyup = handleKeyUp;
+   
+   //renderScene(gl, square, uPMatrix, uMVMatrix);
+   tick();
+      
    console.log("Shape rendered");
-})();
+//})();
+}
+
+
 </script>
    </body>
 </html>
